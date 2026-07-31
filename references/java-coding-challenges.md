@@ -1,8 +1,10 @@
-# Java 后端实操题集
+# Java 后端编码题库
 
-> 面试最后环节可选的编码题。难度从简单到中等，覆盖并发编程、数据库、设计模式、框架原理、系统设计等方向。
+> 面试最后环节可选的 Java 编码题。难度从简单到中等，覆盖并发编程、Java 数据访问、设计模式、框架原理和服务端组件实现等方向。
 >
 > 面试官可根据候选人水平和剩余时间灵活选题，每题标注了难度和预估用时。
+>
+> **语言边界**：所有实现题、伪代码、并发原语和追问均按 Java 版本评估。数据库与系统级标准答案统一见 `references/common-backend-knowledge-base.md`；本文件只保留挑战题面和 Java 侧事务边界、资源生命周期、异常翻译、并发工具与测试关注点。
 
 ---
 
@@ -13,7 +15,7 @@
   - [1.2 线程安全的单例模式](#12-线程安全的单例模式)
   - [1.3 实现一个简易线程池](#13-实现一个简易线程池)
   - [1.4 ConcurrentHashMap 核心操作](#14-concurrenthashmap-核心操作)
-- [2. 数据库](#2-数据库)
+- [2. Java 数据访问与事务实现](#2-java-数据访问与事务实现)
   - [2.1 SQL 题：连续登录用户](#21-sql-题连续登录用户)
   - [2.2 索引设计题](#22-索引设计题)
   - [2.3 事务隔离级别实现](#23-事务隔离级别实现)
@@ -23,7 +25,7 @@
 - [4. 框架原理](#4-框架原理)
   - [4.1 简版 IOC 容器](#41-简版-ioc-容器)
   - [4.2 拦截器链实现](#42-拦截器链实现)
-- [5. 系统设计](#5-系统设计)
+- [5. Java 服务端组件实现](#5-java-服务端组件实现)
   - [5.1 限流器实现](#51-限流器实现)
   - [5.2 分布式 ID 生成器](#52-分布式-id-生成器)
 - [6. 数据结构](#6-数据结构)
@@ -44,11 +46,11 @@
 import java.util.concurrent.*;
 
 public class ProducerConsumerDemo {
-    
+
     public static void main(String[] args) {
         // 使用有界阻塞队列，容量为 10
         BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
-        
+
         // 启动 2 个生产者
         for (int i = 0; i < 2; i++) {
             final int producerId = i;
@@ -65,7 +67,7 @@ public class ProducerConsumerDemo {
                 }
             }, "Producer-" + producerId).start();
         }
-        
+
         // 启动 3 个消费者
         for (int i = 0; i < 3; i++) {
             final int consumerId = i;
@@ -91,10 +93,10 @@ public class ProducerConsumerDemo {
 import java.util.concurrent.*;
 
 public class ProducerConsumerDemo {
-    
+
     public static void main(String[] args) {
         BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
-        
+
         // 生产者
         for (int i = 0; i < 2; i++) {
             final int producerId = i;
@@ -112,7 +114,7 @@ public class ProducerConsumerDemo {
                 }
             }, "Producer-" + producerId).start();
         }
-        
+
         // 消费者
         for (int i = 0; i < 3; i++) {
             final int consumerId = i;
@@ -134,7 +136,7 @@ public class ProducerConsumerDemo {
 
 **追问方向**：
 - ArrayBlockingQueue vs LinkedBlockingQueue 的区别？（数组 vs 链表，有界 vs 无界）
-- 阻塞队列的 put 和 offer 有什么区别？（后者不阻塞，队列满时抛异常）
+- 阻塞队列的 `put(E)` 和 `offer(E)` 有什么区别？（`put` 在队列满时阻塞；无超时的 `offer` 立即返回 `false`，不抛异常；`add(E)` 满时才抛 `IllegalStateException`）
 - 如何实现一个支持优先级的阻塞队列？
 
 ---
@@ -151,9 +153,9 @@ public class ProducerConsumerDemo {
 // 方案一：饿汉式（线程安全，但启动即创建，可能浪费资源）
 class Singleton1 {
     private static final Singleton1 INSTANCE = new Singleton1();
-    
+
     private Singleton1() {}
-    
+
     public static Singleton1 getInstance() {
         return INSTANCE;
     }
@@ -162,9 +164,9 @@ class Singleton1 {
 // 方案二：懒汉式 + synchronized（线程安全，但性能差）
 class Singleton2 {
     private static Singleton2 INSTANCE;
-    
+
     private Singleton2() {}
-    
+
     public static synchronized Singleton2 getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new Singleton2();
@@ -177,9 +179,9 @@ class Singleton2 {
 class Singleton3 {
     // volatile 防止指令重排序
     private static volatile Singleton3 INSTANCE;
-    
+
     private Singleton3() {}
-    
+
     public static Singleton3 getInstance() {
         if (INSTANCE == null) {                 // 第一次检查
             synchronized (Singleton3.class) {
@@ -195,11 +197,11 @@ class Singleton3 {
 // 方案四：静态内部类（推荐，更简洁）
 class Singleton4 {
     private Singleton4() {}
-    
+
     private static class Holder {
         private static final Singleton4 INSTANCE = new Singleton4();
     }
-    
+
     public static Singleton4 getInstance() {
         return Holder.INSTANCE;
     }
@@ -208,7 +210,7 @@ class Singleton4 {
 // 方案五：枚举（Effective Java 作者推荐，最简洁）
 enum Singleton5 {
     INSTANCE;
-    
+
     public void doSomething() {
         // 业务方法
     }
@@ -226,155 +228,300 @@ enum Singleton5 {
 
 **难度**：中等偏难 | **预估用时**：15-20 分钟 | **高频指数**：⭐⭐⭐⭐
 
-**题目**：实现一个简易的线程池，包含核心线程数、最大线程数、任务队列
+**题目**：实现一个固定 worker 数量、带有界任务队列的教学线程池。要求：
+
+- 构造参数必须校验；
+- 生命周期显式区分 `RUNNING`、`SHUTDOWN`、`TERMINATED`；
+- `shutdown()` 后拒绝新任务，但已接收任务必须排空；
+- 构造时通过 `ThreadFactory` 创建 worker；任一 worker 创建或启动失败时必须回滚已启动线程，不能泄漏 non-daemon thread；
+- 单个任务抛出 `RuntimeException` 不得破坏 worker 计数或阻止后续任务；fatal `Error` 不得被吞掉，并触发明确的全池关闭策略；
+- 提供有界等待的 `awaitTermination(...)`。
 
 ```java
-import java.util.concurrent.*;
-import java.util.*;
+import java.time.Duration;
 
 public class SimpleThreadPool {
-    
-    private final int corePoolSize;
-    private final int maxPoolSize;
-    private final long keepAliveTime;
-    private final TimeUnit unit;
-    private final BlockingQueue<Runnable> workQueue;
-    
-    public SimpleThreadPool(int corePoolSize, int maxPoolSize, 
-                           long keepAliveTime, TimeUnit unit,
-                           BlockingQueue<Runnable> workQueue) {
-        this.corePoolSize = corePoolSize;
-        this.maxPoolSize = maxPoolSize;
-        this.keepAliveTime = keepAliveTime;
-        this.unit = unit;
-        this.workQueue = workQueue;
-    }
-    
+    public SimpleThreadPool(int workerCount, int queueCapacity) { }
     public void execute(Runnable task) {
         // TODO: 实现逻辑
     }
-    
-    public void shutdown() {
-        // TODO: 关闭线程池
-    }
+    public void shutdown() { }
+    public boolean awaitTermination(Duration timeout)
+            throws InterruptedException { return false; }
 }
 ```
 
 **参考解答**：
 
 ```java
-import java.util.concurrent.*;
-import java.util.*;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SimpleThreadPool {
-    
-    private final int corePoolSize;
-    private final int maxPoolSize;
-    private final long keepAliveTime;
-    private final TimeUnit unit;
+    enum State {
+        RUNNING,
+        SHUTDOWN,
+        TERMINATED
+    }
+
+    private static final AtomicInteger POOL_IDS = new AtomicInteger();
+    private static final long IDLE_CHECK_MILLIS = 100;
+
     private final BlockingQueue<Runnable> workQueue;
-    private final Set<Worker> workers = new HashSet<>();
-    
-    public SimpleThreadPool(int corePoolSize, int maxPoolSize, 
-                           long keepAliveTime, TimeUnit unit,
-                           BlockingQueue<Runnable> workQueue) {
-        this.corePoolSize = corePoolSize;
-        this.maxPoolSize = maxPoolSize;
-        this.keepAliveTime = keepAliveTime;
-        this.unit = unit;
-        this.workQueue = workQueue;
+    private final Set<Thread> workers = new HashSet<>();
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private final Condition terminated = lifecycleLock.newCondition();
+    private volatile State state = State.RUNNING;
+
+    public SimpleThreadPool(int workerCount, int queueCapacity) {
+        this(workerCount, queueCapacity, namedThreadFactory());
     }
-    
+
+    SimpleThreadPool(
+            int workerCount,
+            int queueCapacity,
+            ThreadFactory threadFactory) {
+        if (workerCount <= 0) {
+            throw new IllegalArgumentException("workerCount must be > 0");
+        }
+        if (queueCapacity <= 0) {
+            throw new IllegalArgumentException("queueCapacity must be > 0");
+        }
+
+        Objects.requireNonNull(threadFactory, "threadFactory");
+        workQueue = new ArrayBlockingQueue<>(queueCapacity);
+        List<Thread> startedWorkers = new ArrayList<>(workerCount);
+        try {
+            startWorkers(workerCount, threadFactory, startedWorkers);
+        } catch (RuntimeException | Error constructionFailure) {
+            finishConstructionRollback(startedWorkers);
+            throw constructionFailure;
+        }
+    }
+
+    private static ThreadFactory namedThreadFactory() {
+        int poolId = POOL_IDS.incrementAndGet();
+        AtomicInteger workerIds = new AtomicInteger();
+        return task -> new Thread(
+                task,
+                "simple-pool-" + poolId
+                        + "-worker-" + workerIds.getAndIncrement());
+    }
+
+    private void startWorkers(
+            int workerCount,
+            ThreadFactory threadFactory,
+            List<Thread> startedWorkers) {
+        lifecycleLock.lock();
+        try {
+            for (int index = 0; index < workerCount; index++) {
+                Thread worker = Objects.requireNonNull(
+                        threadFactory.newThread(this::runWorker),
+                        "threadFactory returned null");
+                workers.add(worker);
+                // 先记录再 start；即使自定义 start() 启动后抛错也能 join。
+                startedWorkers.add(worker);
+                try {
+                    worker.start();
+                } catch (RuntimeException | Error startFailure) {
+                    workers.remove(worker);
+                    throw startFailure;
+                }
+            }
+        } catch (RuntimeException | Error constructionFailure) {
+            state = State.SHUTDOWN;
+            for (Thread worker : startedWorkers) {
+                try {
+                    worker.interrupt();
+                } catch (RuntimeException | Error wakeupFailure) {
+                    if (wakeupFailure != constructionFailure) {
+                        try {
+                            constructionFailure.addSuppressed(wakeupFailure);
+                        } catch (RuntimeException | Error ignored) {
+                            // 回滚诊断不能覆盖最初的构造失败。
+                        }
+                    }
+                }
+            }
+            throw constructionFailure;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    private void finishConstructionRollback(List<Thread> startedWorkers) {
+        boolean interrupted = false;
+        for (Thread worker : startedWorkers) {
+            while (worker.isAlive()) {
+                try {
+                    worker.join();
+                } catch (InterruptedException interruption) {
+                    interrupted = true;
+                }
+            }
+        }
+
+        lifecycleLock.lock();
+        try {
+            workQueue.clear();
+            workers.clear();
+            state = State.TERMINATED;
+            terminated.signalAll();
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public void execute(Runnable task) {
-        synchronized (workers) {
-            // 活跃线程数
-            int activeCount = workers.size();
-            
-            // 情况1：核心线程未满，创建核心线程
-            if (activeCount < corePoolSize) {
-                Worker worker = new Worker(task, true);
-                workers.add(worker);
-                worker.thread.start();
-            } 
-            // 情况2：核心线程满，队列未满，加入队列
-            else if (workQueue.offer(task)) {
-                // 成功入队
+        Objects.requireNonNull(task, "task");
+        lifecycleLock.lock();
+        try {
+            if (state != State.RUNNING) {
+                throw new RejectedExecutionException(
+                        "thread pool is shutting down");
             }
-            // 情况3：队列满，创建临时线程
-            else if (activeCount < maxPoolSize) {
-                Worker worker = new Worker(task, false);
-                workers.add(worker);
-                worker.thread.start();
+            if (!workQueue.offer(task)) {
+                throw new RejectedExecutionException("task queue is full");
             }
-            // 情况4：达到最大线程数，拒绝任务
-            else {
-                throw new RejectedExecutionException("Thread pool is full");
-            }
+        } finally {
+            lifecycleLock.unlock();
         }
     }
-    
+
     public void shutdown() {
-        synchronized (workers) {
-            for (Worker worker : workers) {
-                worker.shutdown();
+        lifecycleLock.lock();
+        try {
+            if (state == State.RUNNING) {
+                state = State.SHUTDOWN;
             }
+        } finally {
+            lifecycleLock.unlock();
         }
     }
-    
-    private class Worker implements Runnable {
-        final Thread thread;
-        final Runnable firstTask;
-        boolean isCore;
-        
-        Worker(Runnable firstTask, boolean isCore) {
-            this.firstTask = firstTask;
-            this.isCore = isCore;
-            this.thread = new Thread(this);
+
+    public boolean awaitTermination(Duration timeout)
+            throws InterruptedException {
+        Objects.requireNonNull(timeout, "timeout");
+        if (timeout.isNegative()) {
+            throw new IllegalArgumentException("timeout must not be negative");
         }
-        
-        public void run() {
-            Runnable task = firstTask;
-            while (task != null || (task = getTask()) != null) {
+        long remainingNanos = timeout.toNanos();
+        lifecycleLock.lockInterruptibly();
+        try {
+            while (state != State.TERMINATED) {
+                if (remainingNanos <= 0) {
+                    return false;
+                }
+                remainingNanos = terminated.awaitNanos(remainingNanos);
+            }
+            return true;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    public boolean isTerminated() {
+        return state == State.TERMINATED;
+    }
+
+    private void runWorker() {
+        try {
+            while (true) {
+                if (state != State.RUNNING && workQueue.isEmpty()) {
+                    return;
+                }
+
+                Runnable task;
+                try {
+                    task = workQueue.poll(
+                            IDLE_CHECK_MILLIS, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException interrupted) {
+                    // 本实现没有 shutdownNow；中断只用于让线程重新检查状态。
+                    continue;
+                }
+                if (task == null) {
+                    continue;
+                }
+
                 try {
                     task.run();
-                } finally {
-                    task = null;
+                } catch (RuntimeException taskFailure) {
+                    reportTaskFailure(taskFailure);
                 }
             }
-            cleanup();
-        }
-        
-        Runnable getTask() {
+        } catch (Error fatalError) {
+            beginFatalShutdown();
+            throw fatalError;
+        } finally {
+            lifecycleLock.lock();
+            workers.remove(Thread.currentThread());
             try {
-                // 核心线程等待队列，空则阻塞
-                // 非核心线程超时等待
-                if (isCore) {
-                    return workQueue.take();
-                } else {
-                    return workQueue.poll(keepAliveTime, unit);
+                if (workers.isEmpty() && state == State.SHUTDOWN) {
+                    // Fatal Error 若耗尽最后一个 worker，剩余任务无法再执行。
+                    workQueue.clear();
+                    state = State.TERMINATED;
+                    terminated.signalAll();
                 }
-            } catch (InterruptedException e) {
-                return null;
+            } finally {
+                lifecycleLock.unlock();
             }
         }
-        
-        void shutdown() {
-            thread.interrupt();
+    }
+
+    private void beginFatalShutdown() {
+        lifecycleLock.lock();
+        try {
+            if (state == State.RUNNING) {
+                state = State.SHUTDOWN;
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
-        
-        void cleanup() {
-            synchronized (workers) {
-                workers.remove(this);
+    }
+
+    private static void reportTaskFailure(RuntimeException failure) {
+        Thread thread = Thread.currentThread();
+        Thread.UncaughtExceptionHandler handler =
+                thread.getUncaughtExceptionHandler();
+        if (handler != null) {
+            try {
+                handler.uncaughtException(thread, failure);
+            } catch (RuntimeException ignored) {
+                // RuntimeException 上报失败不能终止教学 worker。
             }
         }
     }
 }
 ```
 
+**语义边界**：
+
+- `shutdown()` 是 graceful shutdown：只禁止新提交，不中断正在运行的任务，队列中的任务继续执行；队列为空且所有 worker 退出后进入 `TERMINATED`。
+- 默认构造器使用命名 `ThreadFactory`；教学 overload 允许测试注入 factory。factory 必须返回尚未启动、执行传入 `Runnable` 的线程。任一 `newThread` 或 `start` 抛出 `RuntimeException`/`Error` 时，构造器把池切到回滚状态、interrupt 并 join 已启动 worker、清空集合、标记 `TERMINATED`，再原样抛出，不留下 non-daemon thread。
+- 任务的 `RuntimeException` 会报告并隔离；任务 `Error` 不被 `reportTaskFailure` 吞掉。fatal `Error` 将池切到 `SHUTDOWN` 后原样逃逸到线程的 uncaught handler；剩余 worker 继续排空已接收任务并终止。若 fatal `Error` 耗尽最后一个 worker，无法执行的残余队列会被清空，避免 `awaitTermination` 永久等待。
+- worker 的移除、最后一个 worker 的状态迁移和 `awaitTermination` 唤醒都位于 `finally` 路径。
+- 该实现只用于讲清生命周期、有界队列、启动回滚和 fatal failure 策略，没有动态扩缩容、拒绝策略注入、统计或 `shutdownNow()` 等生产能力。生产代码应直接使用并正确配置 `ThreadPoolExecutor`。
+
 **追问方向**：
-- 线程池的拒绝策略有哪些？（Abort/CallerRunsPolicy/DiscardPolicy/DiscardOldestPolicy）
-- 核心线程会超时被回收吗？（默认不会，需要 allowCoreThreadTimeOut）
-- 如何实现线程池的监控？（activeCount、queue size 等）
+- 为什么状态检查和 `offer` 必须在同一把锁内？如果分开会怎样？
+- graceful shutdown 与 `shutdownNow()` 的契约有什么区别？
+- `ThreadPoolExecutor` 如何处理任务异常、worker 替换和拒绝策略？
+- 如何测试“shutdown 前已经入队的任务全部执行，shutdown 后提交被拒绝”？
 
 ---
 
@@ -386,47 +533,47 @@ public class SimpleThreadPool {
 
 ```java
 public class SegmentMap<K, V> {
-    
+
     // 分段数
     private static final int SEGMENTS = 16;
-    
+
     // 分段数组
     private final Segment<K, V>[] segments;
-    
+
     public SegmentMap() {
         segments = new Segment[SEGMENTS];
         for (int i = 0; i < SEGMENTS; i++) {
             segments[i] = new Segment<>();
         }
     }
-    
+
     // 计算 key 所在的分段索引
     private int segmentIndex(K key) {
         return Math.abs(key.hashCode() % SEGMENTS);
     }
-    
+
     public V get(K key) {
         // TODO: 实现 get
         return null;
     }
-    
+
     public V put(K key, V value) {
         // TODO: 实现 put
         return null;
     }
-    
+
     // 分段内部类
     private static class Segment<K, V> {
         // 简单用 synchronized 模拟分段锁
         private final Object lock = new Object();
         private Map<K, V> map = new HashMap<>();
-        
+
         V get(K key) {
             synchronized (lock) {
                 return map.get(key);
             }
         }
-        
+
         V put(K key, V value) {
             synchronized (lock) {
                 return map.put(key, value);
@@ -442,59 +589,59 @@ public class SegmentMap<K, V> {
 import java.util.*;
 
 public class SegmentMap<K, V> {
-    
+
     private static final int SEGMENTS = 16;
     private final Segment<K, V>[] segments;
-    
+
     public SegmentMap() {
         segments = new Segment[SEGMENTS];
         for (int i = 0; i < SEGMENTS; i++) {
             segments[i] = new Segment<>();
         }
     }
-    
+
     private int segmentIndex(K key) {
         return Math.abs(key.hashCode() % SEGMENTS);
     }
-    
+
     public V get(K key) {
         int index = segmentIndex(key);
         return segments[index].get(key);
     }
-    
+
     public V put(K key, V value) {
         int index = segmentIndex(key);
         return segments[index].put(key, value);
     }
-    
+
     // JDK 8 ConcurrentHashMap 的核心原理（简化的分段锁）
     // 不同分段可以并发访问，提高吞吐量
-    
+
     private static class Segment<K, V> {
         private final Object lock = new Object();
         private volatile Map<K, V> map = new HashMap<>();
-        
+
         V get(K key) {
             synchronized (lock) {
                 return map.get(key);
             }
         }
-        
+
         V put(K key, V value) {
             synchronized (lock) {
                 return map.put(key, value);
             }
         }
-        
+
         // JDK 8 ConcurrentHashMap 的改进：
         // 1. 取消分段锁，改用 Node + CAS + synchronized
         // 2. 锁的粒度更细，只锁单个桶
         // 3. 使用红黑树优化链表过长的情况
     }
-    
+
     public static void main(String[] args) throws InterruptedException {
         SegmentMap<String, Integer> map = new SegmentMap<>();
-        
+
         // 测试并发put
         List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -503,15 +650,15 @@ public class SegmentMap<K, V> {
                 map.put("key" + (num % 10), num);
             }));
         }
-        
+
         for (Thread t : threads) {
             t.start();
         }
-        
+
         for (Thread t : threads) {
             t.join();
         }
-        
+
         // 输出每个 key 的值（最后写入的）
         for (int i = 0; i < 10; i++) {
             System.out.println("key" + i + " = " + map.get("key" + i));
@@ -527,7 +674,9 @@ public class SegmentMap<K, V> {
 
 ---
 
-## 2. 数据库
+## 2. Java 数据访问与事务实现
+
+> SQL、索引、事务隔离和 MVCC 的标准语义只在 `references/common-backend-knowledge-base.md` 维护。本章保留挑战题面，但参考要点只讨论 Java 应用侧的 JDBC/Spring 事务边界、连接生命周期、异常翻译、并发与测试，不在此复制数据库标准答案。
 
 ### 2.1 SQL 题：连续登录用户
 
@@ -557,37 +706,17 @@ CREATE TABLE user_logins (
 
 **参考解答**：
 
-```sql
--- 解法1：窗口函数 + 分组
-WITH ranked AS (
-    SELECT 
-        user_id,
-        login_date,
-        DATE_SUB(login_date, INTERVAL ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) DAY) AS grp
-    FROM user_logins
-),
-consecutive AS (
-    SELECT 
-        user_id,
-        COUNT(*) AS consecutive_days
-    FROM ranked
-    GROUP BY user_id, grp
-    HAVING COUNT(*) >= 3
-)
-SELECT DISTINCT user_id FROM consecutive;
+数据库解法、窗口函数语义、复杂度和索引取舍统一见 `references/common-backend-knowledge-base.md`。Java 实现侧应继续检查：
 
--- 核心思路：
--- 1. 按日期排序，用日期减去行号，相同的 grp 表示连续
--- 2. 2024-01-01 - 1 = 2023-12-31
---    2024-01-02 - 2 = 2023-12-31  <- 同一 grp
---    2024-01-03 - 3 = 2023-12-31  <- 同一 grp
---    2024-01-05 - 4 = 2024-01-01  <- 断开，grp 变化
-```
+- 使用参数绑定而不是拼接 SQL；日期映射明确使用 `LocalDate`，不要让默认时区参与纯日期计算。
+- `Connection`、`PreparedStatement`、`ResultSet` 使用 try-with-resources；连接由事务框架托管时，不在 DAO 中自行提交或关闭框架拥有的连接。
+- 大结果集设置合理的 fetch size、超时和取消路径；不要无界加载到 `List`。
+- 集成测试至少覆盖重复日期、跨月/跨年、乱序输入、空结果和数据库方言；SQL 正确性不能只靠 mock 验证。
 
 **追问方向**：
-- 这个解法的时间复杂度是多少？（O(n log n)）
-- 如果表很大（1亿行），如何优化？（分区、索引）
-- 如何找出每个用户的最长连续登录天数？
+- 数据库语义与复杂度如何在公共知识库中验证？
+- JDBC 日期类型和时区错误会如何污染结果？
+- 如何用真实数据库执行计划和集成测试证明实现，而不是只 mock DAO？
 
 ---
 
@@ -607,49 +736,17 @@ SELECT DISTINCT user_id FROM consecutive;
 
 **参考解答**：
 
-```sql
--- 基础表结构
-CREATE TABLE posts (
-    id BIGINT PRIMARY KEY,
-    board_id INT NOT NULL,
-    user_id INT NOT NULL,
-    title VARCHAR(200),
-    content TEXT,
-    create_time DATETIME,
-    update_time DATETIME
-);
+索引标准答案、最左前缀、覆盖索引和执行计划判读统一见 `references/common-backend-knowledge-base.md`。Java 实现侧只补充：
 
--- 索引设计：
-
--- 1. 单独索引
--- idx_board_id(board_id)           -- 场景2
--- idx_user_id(user_id)             -- 场景3
--- idx_create_time(create_time)     -- 场景1
-
--- 2. 联合索引（覆盖高频组合查询）
--- idx_board_user(board_id, user_id) -- 场景4
--- idx_board_time(board_id, create_time) -- 场景1+2（范围放最后）
-
--- 为什么不把全部字段放一个联合索引？
--- 1. 索引不是越多越好，更新成本高
--- 2. 区分度大的字段放前面
--- 3. 范围查询字段放最后（MySQL 索引最左前缀原则）
-
--- 最优设计（根据查询频率调整）：
--- 高频：查询某板块的帖子 -> (board_id, create_time)
--- 高频：查询某用户的帖子 -> (user_id, create_time)
--- 中频：查询某板块某用户的帖子 -> (board_id, user_id)
--- 低频：按时间范围 -> create_time
-
--- 覆盖索引：如果经常需要查询 title，可以建立覆盖索引
--- (board_id, create_time) INCLUDE (title)  -- SQL Server
--- 或者 (board_id, create_time, title)       -- MySQL（但会增加索引大小）
-```
+- Repository 方法要让查询条件、排序和分页契约显式可见，避免一个“万能查询”隐藏不同访问路径。
+- JPA/Hibernate 需检查生成 SQL、参数类型、隐式 join、N+1 和分页行为；MyBatis/JDBC 需检查动态 SQL 分支和参数绑定。
+- 对迁移脚本做版本化、回滚或前向修复设计；应用发布顺序必须兼容索引尚未创建或正在在线构建的窗口。
+- 测试使用代表性数据分布和实际执行计划；单元测试只证明 Java 分支，不证明数据库会选择目标索引。
 
 **追问方向**：
-- 什么是索引覆盖？（索引包含所有要查询的字段，无需回表）
-- 什么情况下索引会失效？（左模糊、函数、隐式转换）
-- 联合索引的最左前缀原则是什么？
+- 如何从 Hibernate/MyBatis 最终 SQL 回到真实执行计划？
+- 索引迁移与 Java 应用如何做到向前/向后兼容？
+- 为什么 repository mock 不能证明索引设计有效？
 
 ---
 
@@ -661,78 +758,20 @@ CREATE TABLE posts (
 
 **参考解答**：
 
-```java
-/**
- * MySQL InnoDB 事务隔离级别：
- * 
- * 1. READ UNCOMMITTED（读未提交）
- *    - 最低级别，允许脏读
- *    - 实现：不加锁，直接读取最新数据
- * 
- * 2. READ COMMITTED（读已提交）
- *    - 避免脏读，可能出现不可重复读
- *    - 实现：读取时加共享锁，读取后释放
- *    - 每次读取都重新获取最新数据
- * 
- * 3. REPEATABLE READ（可重复读，MySQL 默认）
- *    - 避免脏读、不可重复读，可能出现幻读
- *    - 实现：
- *      - 读取时加共享锁，事务结束才释放
- *      - 使用 MVCC 快照读，不加锁的 SELECT 读取快照
- * 
- * 4. SERIALIZABLE（串行化）
- *    - 最高级别，完全串行执行
- *    - 实现：所有读都加排他锁
- */
+四种隔离级别、consistent read、locking read、MVCC、ReadView 和 next-key lock 的标准答案统一见 `references/common-backend-knowledge-base.md`。不得在 Java 题库维护第二份数据库语义，也不得使用“RC 普通读加共享锁”“SERIALIZABLE 普通读加排他锁”或“RR 总在事务开始创建快照”这类错误概括。
 
-public class TransactionIsolationDemo {
-    
-    // 模拟 MVCC 的关键概念
-    static class MVCC {
-        // 每行数据有隐藏的两个字段：
-        // 1. DB_TRX_ID：最后修改的事务ID
-        // 2. DB_ROLL_PTR：指向undo log的指针
-        
-        // SELECT 读取版本：
-        // - READ COMMITTED：总是读取最新快照
-        // - REPEATABLE READ：读取事务开始时的快照
-        
-        // 示例：
-        void demonstrateReadCommitted() {
-            // 事务A：插入一条数据，提交
-            // transaction_a.execute("INSERT INTO users VALUES (1, 'Alice')");
-            // transaction_a.commit();
-            
-            // 事务B：读取，可以读到事务A提交的数据
-            // transaction_b.execute("SELECT * FROM users"); // 看到 Alice
-        }
-        
-        void demonstrateRepeatableRead() {
-            // 事务A：插入一条数据，提交
-            // transaction_a.execute("INSERT INTO users VALUES (1, 'Alice')");
-            // transaction_a.commit();
-            
-            // 事务B：开启事务时创建快照，不受其他事务影响
-            // transaction_b.execute("SELECT * FROM users"); // 看不到 Alice
-            // transaction_b.start(); // 创建快照的时间点
-        }
-    }
-    
-    // 间隙锁（Next-Key Lock）解决幻读
-    // 在 REPEATABLE READ 下，范围查询会锁定区间，防止幻读
-    void demonstrateGapLock() {
-        // 假设 users 表有 id 1, 3, 5
-        // SELECT * FROM users WHERE id > 2 AND id < 5 FOR UPDATE;
-        // 会锁定 (2, 5) 这个区间，即使 id=4 不存在也会被锁定
-        // 这样其他事务无法插入 id=4 的记录，避免幻读
-    }
-}
-```
+Java 应用侧参考要点：
+
+- JDBC `Connection#setTransactionIsolation` 和 Spring `@Transactional(isolation=...)` 表达的是请求的事务边界；实际支持和行为仍需核对驱动、连接池与数据库。
+- `@Transactional` 通常依赖代理。self-invocation、异常被吞、rollback 规则、传播行为和异步线程切换都可能让预期事务边界失效。
+- 连接必须在事务完成后归还连接池；手工 JDBC 使用 try-with-resources，并正确处理 commit、rollback 和 suppressed exception。
+- Spring 的 `DataAccessException` 是异常翻译，不等于业务重试策略。重试需限定 transient failure、幂等性、次数、退避和整体 deadline。
+- 隔离行为必须用至少两个独立连接/线程的集成测试验证，并用 latch/barrier 控制时序；同一连接内顺序执行不能证明并发现象。
 
 **追问方向**：
-- 什么是 MVCC？（多版本并发控制）
-- 什么是脏读、不可重复读、幻读？
-- InnoDB 是如何解决幻读的？（间隙锁/Next-Key Lock）
+- Java 代码在哪一层声明并实际开启事务？
+- 连接池复用时如何防止隔离级别或 read-only 状态泄漏到下一请求？
+- 如何设计两个连接的可重复并发测试，并区分数据库行为与 Spring 代理失效？
 
 ---
 
@@ -757,7 +796,7 @@ class Alipay implements Payment {
     public void pay(double amount) {
         System.out.println("支付宝支付：" + amount);
     }
-    
+
     @Override
     public void refund(double amount) {
         System.out.println("支付宝退款：" + amount);
@@ -770,7 +809,7 @@ class WechatPay implements Payment {
     public void pay(double amount) {
         System.out.println("微信支付：" + amount);
     }
-    
+
     @Override
     public void refund(double amount) {
         System.out.println("微信退款：" + amount);
@@ -792,15 +831,15 @@ class PaymentFactory {
 ```java
 // 工厂实现
 class PaymentFactory {
-    
+
     private static final Map<String, Payment> PAYMENTS = new HashMap<>();
-    
+
     static {
         PAYMENTS.put("alipay", new Alipay());
         PAYMENTS.put("wechat", new WechatPay());
         // 可以继续添加其他支付方式
     }
-    
+
     public static Payment getPayment(String type) {
         Payment payment = PAYMENTS.get(type.toLowerCase());
         if (payment == null) {
@@ -808,7 +847,7 @@ class PaymentFactory {
         }
         return payment;
     }
-    
+
     // 扩展：使用反射，支持通过类名动态创建
     public static Payment getPaymentByClass(String className) {
         try {
@@ -825,7 +864,7 @@ public class Main {
     public static void main(String[] args) {
         Payment alipay = PaymentFactory.getPayment("alipay");
         alipay.pay(100.0);
-        
+
         Payment wechat = PaymentFactory.getPayment("wechat");
         wechat.pay(200.0);
     }
@@ -863,9 +902,9 @@ class NoDiscount implements DiscountStrategy {
 class FullDiscount implements DiscountStrategy {
     private double threshold;  // 满多少
     private double reduction;  // 减多少
-    
+
     // TODO: 构造函数和实现
-    
+
     @Override
     public double calculate(double originalPrice) {
         // 满 threshold 减 reduction
@@ -876,9 +915,9 @@ class FullDiscount implements DiscountStrategy {
 // 折扣策略
 class PercentDiscount implements DiscountStrategy {
     private double percent;  // 折扣率，如 0.8 表示 8 折
-    
+
     // TODO: 构造函数和实现
-    
+
     @Override
     public double calculate(double originalPrice) {
         return originalPrice;
@@ -888,11 +927,11 @@ class PercentDiscount implements DiscountStrategy {
 // 订单类
 class Order {
     private DiscountStrategy strategy;
-    
+
     public void setStrategy(DiscountStrategy strategy) {
         this.strategy = strategy;
     }
-    
+
     public double calculatePrice(double originalPrice) {
         return strategy.calculate(originalPrice);
     }
@@ -906,12 +945,12 @@ class Order {
 class FullDiscount implements DiscountStrategy {
     private double threshold;
     private double reduction;
-    
+
     public FullDiscount(double threshold, double reduction) {
         this.threshold = threshold;
         this.reduction = reduction;
     }
-    
+
     @Override
     public double calculate(double originalPrice) {
         if (originalPrice >= threshold) {
@@ -924,11 +963,11 @@ class FullDiscount implements DiscountStrategy {
 // 折扣策略
 class PercentDiscount implements DiscountStrategy {
     private double percent;
-    
+
     public PercentDiscount(double percent) {
         this.percent = percent;
     }
-    
+
     @Override
     public double calculate(double originalPrice) {
         return originalPrice * percent;
@@ -939,15 +978,15 @@ class PercentDiscount implements DiscountStrategy {
 public class Main {
     public static void main(String[] args) {
         Order order = new Order();
-        
+
         // 使用满减策略
         order.setStrategy(new FullDiscount(100, 10));
         System.out.println("满减价格：" + order.calculatePrice(150));  // 140
-        
+
         // 切换为折扣策略
         order.setStrategy(new PercentDiscount(0.8));
         System.out.println("8折价格：" + order.calculatePrice(150));  // 120
-        
+
         // 切换为不打折
         order.setStrategy(new NoDiscount());
         System.out.println("原价：" + order.calculatePrice(150));  // 150
@@ -975,19 +1014,19 @@ import java.lang.reflect.*;
 import java.util.*;
 
 public class SimpleIOC {
-    
+
     private Map<String, Object> beans = new HashMap<>();
-    
+
     // 注册 bean
     public void register(String name, Object obj) {
         beans.put(name, obj);
     }
-    
+
     // 获取 bean
     public Object getBean(String name) {
         return beans.get(name);
     }
-    
+
     // 扫描并注入依赖
     public void autowire(Object obj) {
         // TODO: 实现自动注入
@@ -1006,10 +1045,10 @@ import java.lang.reflect.*;
 import java.util.*;
 
 public class SimpleIOC {
-    
+
     private Map<String, Object> beans = new HashMap<>();
     private Map<Class<?>, String> classToName = new HashMap<>();
-    
+
     public void register(Class<?> clazz, Object obj) {
         String name = clazz.getSimpleName();
         // 类名首字母小写作为 bean 名称
@@ -1017,30 +1056,30 @@ public class SimpleIOC {
         beans.put(name, obj);
         classToName.put(clazz, name);
     }
-    
+
     public Object getBean(Class<?> clazz) {
         String name = classToName.get(clazz);
         return name != null ? beans.get(name) : null;
     }
-    
+
     public Object getBean(String name) {
         return beans.get(name);
     }
-    
+
     // 自动注入
     public void autowire(Object obj) {
         Class<?> clazz = obj.getClass();
-        
+
         for (Field field : clazz.getDeclaredFields()) {
             // 检查 @Autowired 注解
             if (field.isAnnotationPresent(Autowired.class)) {
                 Class<?> fieldType = field.getType();
                 Object dependency = getBean(fieldType);
-                
+
                 if (dependency == null) {
                     throw new RuntimeException("找不到依赖：" + fieldType.getName());
                 }
-                
+
                 try {
                     field.setAccessible(true);
                     field.set(obj, dependency);
@@ -1050,26 +1089,26 @@ public class SimpleIOC {
             }
         }
     }
-    
+
     // 组件扫描（简化版）
     public void scan(String basePackage) throws Exception {
         // 实际项目中会用类加载器扫描 basePackage 下的类
         // 这里简化处理，直接注册示例类
     }
-    
+
     public static void main(String[] args) throws Exception {
         SimpleIOC ioc = new SimpleIOC();
-        
+
         // 注册 bean
         UserService userService = new UserServiceImpl();
         OrderService orderService = new OrderServiceImpl();
-        
+
         ioc.register(UserService.class, userService);
         ioc.register(OrderService.class, orderService);
-        
+
         // 注入依赖
         ioc.autowire(userService);
-        
+
         // 验证注入
         UserService us = (UserService) ioc.getBean(UserService.class);
         us.save();
@@ -1088,7 +1127,7 @@ interface UserService {
 class UserServiceImpl implements UserService {
     @Autowired
     private OrderService orderService;
-    
+
     @Override
     public void save() {
         System.out.println("UserService.save()");
@@ -1117,34 +1156,38 @@ class OrderServiceImpl implements OrderService {}
 import java.util.*;
 
 public class InterceptorChain {
-    
+
     private List<Interceptor> interceptors = new ArrayList<>();
-    
+
     // 添加拦截器
     public void addInterceptor(Interceptor interceptor) {
         interceptors.add(interceptor);
     }
-    
+
     // 执行拦截器链
     public boolean execute(Object handler) {
+        int lastSuccessfulIndex = -1;
+
         // TODO: 按顺序执行 preHandle
-        // 任何一个返回 false，则中断执行
-        
+        // 记录最后一个成功返回 true 的拦截器索引
+        // 任何一个返回 false，则中断执行，并只回调此前成功的拦截器
+        // preHandle 抛异常时，也只回调此前成功的拦截器，并传入原异常
+
         try {
             // 执行目标处理逻辑
             // handler.handle();
-            
-            // 逆向执行 postHandle
-            for (int i = interceptors.size() - 1; i >= 0; i--) {
+
+            // 只对成功执行 preHandle 的拦截器逆向执行 postHandle
+            for (int i = lastSuccessfulIndex; i >= 0; i--) {
                 interceptors.get(i).postHandle(handler, null, null, null);
             }
         } finally {
-            // 始终执行 afterCompletion
-            for (int i = interceptors.size() - 1; i >= 0; i--) {
+            // 只对成功执行 preHandle 的拦截器逆向执行 afterCompletion
+            for (int i = lastSuccessfulIndex; i >= 0; i--) {
                 interceptors.get(i).afterCompletion(handler, null, null, null);
             }
         }
-        
+
         return true;
     }
 }
@@ -1163,49 +1206,57 @@ interface Interceptor {
 import java.util.*;
 
 public class InterceptorChain {
-    
+
     private List<Interceptor> interceptors = new ArrayList<>();
-    
+
     public void addInterceptor(Interceptor interceptor) {
         interceptors.add(interceptor);
     }
-    
+
     public boolean execute(Object handler) {
-        // 逆向存储，以便逆向执行 postHandle
-        List<Interceptor> reversed = new ArrayList<>(interceptors);
-        Collections.reverse(reversed);
-        
-        // 按顺序执行 preHandle
-        for (Interceptor interceptor : interceptors) {
-            if (!interceptor.preHandle(handler, null, null)) {
-                // 返回 false，触发 afterCompletion 并中断
-                triggerAfterCompletion(handler, reversed);
-                return false;
+        int lastSuccessfulIndex = -1;
+
+        try {
+            // 按顺序执行 preHandle
+            for (int i = 0; i < interceptors.size(); i++) {
+                if (!interceptors.get(i).preHandle(handler, null, null)) {
+                    // 只回调已经成功完成 preHandle 的拦截器。
+                    triggerAfterCompletion(handler, lastSuccessfulIndex, null);
+                    return false;
+                }
+                lastSuccessfulIndex = i;
             }
+        } catch (RuntimeException e) {
+            // 抛异常的 interceptor 未成功，不纳入 completion 范围。
+            triggerAfterCompletion(handler, lastSuccessfulIndex, e);
+            throw e;
         }
-        
+
+        Exception failure = null;
         try {
             // 执行目标处理逻辑
             System.out.println("执行 Handler: " + handler);
-            
-            // 逆向执行 postHandle
-            for (Interceptor interceptor : reversed) {
-                interceptor.postHandle(handler, null, null, null);
+
+            // Handler 成功后，只对成功执行 preHandle 的拦截器逆序 postHandle。
+            for (int i = lastSuccessfulIndex; i >= 0; i--) {
+                interceptors.get(i).postHandle(handler, null, null, null);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            failure = e;
             throw e;
         } finally {
-            // 始终执行 afterCompletion
-            triggerAfterCompletion(handler, reversed);
+            triggerAfterCompletion(handler, lastSuccessfulIndex, failure);
         }
-        
+
         return true;
     }
-    
-    private void triggerAfterCompletion(Object handler, List<Interceptor> interceptors) {
-        for (Interceptor interceptor : interceptors) {
+
+    private void triggerAfterCompletion(
+            Object handler, int lastSuccessfulIndex, Exception failure) {
+        for (int i = lastSuccessfulIndex; i >= 0; i--) {
             try {
-                interceptor.afterCompletion(handler, null, null, null);
+                interceptors.get(i).afterCompletion(
+                        handler, null, null, failure);
             } catch (Exception e) {
                 // 记录日志，但不中断
                 e.printStackTrace();
@@ -1218,12 +1269,12 @@ public class InterceptorChain {
 class Main {
     public static void main(String[] args) {
         InterceptorChain chain = new InterceptorChain();
-        
+
         // 添加拦截器
         chain.addInterceptor(new AuthInterceptor());
         chain.addInterceptor(new LoggingInterceptor());
         chain.addInterceptor(new TransactionInterceptor());
-        
+
         // 执行
         chain.execute(new UserHandler());
     }
@@ -1236,12 +1287,12 @@ class AuthInterceptor implements Interceptor {
         System.out.println("AuthInterceptor.preHandle");
         return true;  // 返回 false 可中断执行
     }
-    
+
     @Override
     public void postHandle(Object handler, Object request, Object response, Object model) {
         System.out.println("AuthInterceptor.postHandle");
     }
-    
+
     @Override
     public void afterCompletion(Object handler, Object request, Object response, Exception ex) {
         System.out.println("AuthInterceptor.afterCompletion");
@@ -1253,13 +1304,16 @@ class UserHandler {}
 ```
 
 **追问方向**：
-- preHandle 返回 false 会怎样？（中断执行，调用 afterCompletion）
+- `preHandle` 返回 false 会怎样？（中断执行；只对它之前已经返回 true 的拦截器逆序调用 `afterCompletion`，返回 false 的拦截器和未执行拦截器不回调）
+- `preHandle` 抛异常会怎样？（只对它之前成功返回 true 的拦截器逆序调用 `afterCompletion` 并传入同一个异常；抛异常的拦截器和未执行拦截器不回调，随后原样抛出）
 - 为什么 postHandle 和 afterCompletion 要逆向执行？（FILO，先执行的后处理）
 - Filter 和 Interceptor 的区别？（Filter 是 Servlet 层面的，Interceptor 是框架层面的）
 
 ---
 
-## 5. 系统设计
+## 5. Java 服务端组件实现
+
+> 限流与分布式 ID 的系统级语义、容量、故障和分布式取舍统一见 `references/common-backend-knowledge-base.md`。本章只评价 Java 类型、并发原语、时间源、异常与测试实现。
 
 ### 5.1 限流器实现
 
@@ -1268,30 +1322,35 @@ class UserHandler {}
 **题目**：实现一个滑动窗口限流器
 
 ```java
-import java.util.concurrent.*;
+import java.util.*;
 
 public class SlidingWindowRateLimiter {
-    
+
     private final int maxRequests;      // 时间窗口内的最大请求数
     private final long windowSizeMs;    // 时间窗口大小（毫秒）
     private final Queue<Long> requests; // 请求时间戳队列
-    
+
     public SlidingWindowRateLimiter(int maxRequests, long windowSizeMs) {
+        if (maxRequests <= 0 || windowSizeMs <= 0) {
+            throw new IllegalArgumentException(
+                    "maxRequests 和 windowSizeMs 必须大于 0");
+        }
         this.maxRequests = maxRequests;
         this.windowSizeMs = windowSizeMs;
         this.requests = new LinkedList<>();
     }
-    
+
     // 尝试获取令牌
     public synchronized boolean tryAcquire() {
+        // 教学示例使用墙钟；生产实现应注入单调时间源。
         long now = System.currentTimeMillis();
         long windowStart = now - windowSizeMs;
-        
+
         // TODO:
         // 1. 移除窗口外的请求记录
         // 2. 检查当前请求数是否已达到上限
         // 3. 如果未达到，记录当前请求并返回 true
-        
+
         return false;
     }
 }
@@ -1299,80 +1358,22 @@ public class SlidingWindowRateLimiter {
 
 **参考解答**：
 
-```java
-import java.util.*;
-import java.util.concurrent.*;
+算法语义、窗口边界、分布式精度、阈值和故障取舍统一见 `references/common-backend-knowledge-base.md`，本文件不维护第二份限流标准答案。
 
-public class SlidingWindowRateLimiter {
-    
-    private final int maxRequests;
-    private final long windowSizeMs;
-    private final Queue<Long> requests;
-    
-    public SlidingWindowRateLimiter(int maxRequests, long windowSizeMs) {
-        this.maxRequests = maxRequests;
-        this.windowSizeMs = windowSizeMs;
-        this.requests = new ConcurrentLinkedQueue<>();
-    }
-    
-    public boolean tryAcquire() {
-        long now = System.currentTimeMillis();
-        long windowStart = now - windowSizeMs;
-        
-        // 1. 清理窗口外的请求
-        while (true) {
-            Long oldest = requests.peek();
-            if (oldest == null || oldest > windowStart) {
-                break;
-            }
-            requests.poll();
-        }
-        
-        // 2. 检查是否达到上限
-        if (requests.size() >= maxRequests) {
-            return false;
-        }
-        
-        // 3. 记录当前请求
-        requests.offer(now);
-        return true;
-    }
-    
-    // 阻塞直到获取令牌
-    public void acquire() throws InterruptedException {
-        while (!tryAcquire()) {
-            Thread.sleep(10);  // 简单等待，实际应该用条件变量
-        }
-    }
-    
-    // 带超时的获取
-    public boolean acquire(long timeoutMs) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (System.currentTimeMillis() < deadline) {
-            if (tryAcquire()) {
-                return true;
-            }
-            Thread.sleep(10);
-        }
-        return false;
-    }
-    
-    // 测试
-    public static void main(String[] args) throws InterruptedException {
-        SlidingWindowRateLimiter limiter = new SlidingWindowRateLimiter(5, 1000);
-        
-        for (int i = 0; i < 10; i++) {
-            System.out.println("Request " + i + ": " + (limiter.tryAcquire() ? "通过" : "拒绝"));
-            Thread.sleep(100);
-        }
-    }
-}
-```
+Java-specific 实现关注点：
+
+- 构造器校验容量和持续时间；用 `Deque<Long>` 或等价结构维护进程内状态，并让清理、容量检查、写入处于同一同步协议。
+- 注入返回单调经过时间的接口，避免测试依赖真实 `sleep`。`System.nanoTime()` 只能计算同一进程内差值，不能当绝对时间戳或跨进程时间。
+- 阻塞 API 必须定义 interrupt、deadline 和取消语义，不用固定轮询间隔忙等占用线程池 worker。
+- 并发测试用 barrier 同时发起请求，断言上限、不变量和无数据竞争；性能结论需要 JMH/JFR 或同负载压测证据。
+- 若需求升级为分布式限流，重新路由公共知识库做系统设计；不能把这个进程内 Java 类包装成分布式正确性答案。
 
 **追问方向**：
-- 滑动窗口和固定窗口的区别？（更精确的限流）
-- 令牌桶和漏桶算法的区别？（令牌桶允许突发，漏桶平滑输出）
-- 分布式环境下如何实现限流？（Redis + Lua、滑动窗口计数）
+- 算法和分布式取舍如何从公共知识库选择，本实现只负责哪些 Java 进程内不变量？
+- 如何注入时间源，使窗口边界、回拨和超时测试无需真实 `sleep`？
+- `synchronized` 版本在高竞争下如何建立 benchmark/JFR 证据，再决定是否分片或改用其他同步结构？
+- 阻塞式 `acquire` 如何响应 interrupt、传播 timeout，并避免忙等占用 worker？
+- `System.currentTimeMillis()` 回拨会怎样？（墙钟调整可能让窗口判断和超时失真；生产实现应注入可测试的单调时间源，Java 可用 `System.nanoTime()` 的差值计算经过时间，不能把它当作绝对时间戳）
 
 ---
 
@@ -1385,26 +1386,26 @@ public class SlidingWindowRateLimiter {
 ```java
 /**
  * 分布式 ID 格式（64 位）：
- * 
+ *
  * | sign | timestamp | workid | sequence |
  * | 1位  |  41位     | 10位   | 12位    |
- * 
+ *
  * - sign: 始终为 0，保证正数
  * - timestamp: 从某个 epoch 开始的时间戳（毫秒）
  * - workid: 机器/服务标识（最多 1024 个节点）
  * - sequence: 同一毫秒内的序列号（最多 4096）
  */
 public class SnowflakeIdGenerator {
-    
+
     // 2024-01-01 作为 epoch
     private static final long EPOCH = 1704067200000L;
-    
+
     private final long workerId;
-    
+
     public SnowflakeIdGenerator(long workerId) {
         this.workerId = workerId;
     }
-    
+
     public long generate() {
         // TODO: 实现 ID 生成
         return 0;
@@ -1414,96 +1415,21 @@ public class SnowflakeIdGenerator {
 
 **参考解答**：
 
-```java
-public class SnowflakeIdGenerator {
-    
-    // 2024-01-01 作为 epoch
-    private static final long EPOCH = 1704067200000L;
-    
-    // 各部分占用的位数
-    private static final long WORKER_ID_BITS = 10L;
-    private static final long SEQUENCE_BITS = 12L;
-    
-    // 各部分的最大值
-    private static final long MAX_WORKER_ID = ~(-1L << WORKER_ID_BITS);  // 1023
-    private static final long MAX_SEQUENCE = ~(-1L << SEQUENCE_BITS);   // 4095
-    
-    // 各部分向左移动的位数
-    private static final long WORKER_ID_SHIFT = SEQUENCE_BITS;
-    private static final long TIMESTAMP_LEFT_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS;
-    
-    // 时间戳掩码
-    private static final long TIMESTAMP_MASK = ~(-1L << 41);
-    
-    private final long workerId;
-    private long sequence = 0L;
-    private long lastTimestamp = -1L;
-    
-    public SnowflakeIdGenerator(long workerId) {
-        if (workerId < 0 || workerId > MAX_WORKER_ID) {
-            throw new IllegalArgumentException("workerId 超出范围: 0-" + MAX_WORKER_ID);
-        }
-        this.workerId = workerId;
-    }
-    
-    public synchronized long generate() {
-        long timestamp = System.currentTimeMillis();
-        
-        // 时钟回拨检测
-        if (timestamp < lastTimestamp) {
-            throw new RuntimeException("时钟回拨，不允许生成 ID");
-        }
-        
-        // 同一毫秒内，序列号递增
-        if (timestamp == lastTimestamp) {
-            sequence = (sequence + 1) & MAX_SEQUENCE;
-            // 序列号用完，等待下一毫秒
-            if (sequence == 0) {
-                timestamp = waitNextMillis(timestamp);
-            }
-        } else {
-            sequence = 0;
-        }
-        
-        lastTimestamp = timestamp;
-        
-        // 组装 ID
-        return ((timestamp - EPOCH) & TIMESTAMP_MASK) << TIMESTAMP_LEFT_SHIFT
-                | (workerId << WORKER_ID_SHIFT)
-                | sequence;
-    }
-    
-    private long waitNextMillis(long timestamp) {
-        while (timestamp <= lastTimestamp) {
-            timestamp = System.currentTimeMillis();
-        }
-        return timestamp;
-    }
-    
-    // 从 ID 中解析各部分
-    public static void parse(long id) {
-        System.out.println("ID: " + id);
-        System.out.println("Timestamp: " + ((id >> TIMESTAMP_LEFT_SHIFT) & TIMESTAMP_MASK) + EPOCH);
-        System.out.println("Worker ID: " + ((id >> WORKER_ID_SHIFT) & MAX_WORKER_ID));
-        System.out.println("Sequence: " + (id & MAX_SEQUENCE));
-    }
-    
-    public static void main(String[] args) {
-        SnowflakeIdGenerator generator = new SnowflakeIdGenerator(1);
-        
-        for (int i = 0; i < 5; i++) {
-            long id = generator.generate();
-            System.out.println("Generated: " + id);
-            parse(id);
-        }
-    }
-}
-```
+ID 方案、位宽预算、节点 ID 分配、回拨和可用性取舍统一见 `references/common-backend-knowledge-base.md`，本文件不维护第二份 Snowflake 标准答案。
+
+Java-specific 实现关注点：
+
+- 使用带符号 `long` 时先证明各字段位宽、shift、mask、epoch 寿命和正数约束；构造器拒绝越界 worker ID。
+- 注入 wall clock 和等待/回拨策略，确定性测试同毫秒序列耗尽、回拨、跨 epoch 与时间戳溢出；不能在测试中依赖真实毫秒推进。
+- 用 `synchronized`、lock 或 atomic state 维护 `(lastTimestamp, sequence)` 的复合不变量；若改成 CAS，必须证明整个状态原子更新，不只原子更新 sequence。
+- 等待下一时间单位要定义 interrupt、deadline 和 CPU 占用；异常类型应区分配置错误、时钟错误和暂时容量耗尽。
+- 多线程测试验证唯一性和单实例顺序，跨节点唯一性必须由节点 ID 分配与运维协议证明，单元测试不能替代该系统约束。
 
 **追问方向**：
-- Snowflake 的优缺点？（趋势递增、高并发，但依赖时钟）
-- 时钟回拨如何处理？（抛出异常、等待、借用未来时间）
-- 雪花算法变种？（百度 UidGenerator、滴滴 TinyID）
+- Snowflake 类方案的通用取舍如何从公共知识库判断，本类只实现哪些 Java 侧不变量？
+- 如何把 wall clock 与等待策略注入构造器，确定性测试同毫秒耗尽和时钟回拨？
+- `synchronized` 是否满足目标吞吐，如何用 JMH 或压测验证而不是凭锁类型判断？
+- 时间戳越界、worker ID 冲突和等待被中断时应返回什么异常，调用方如何区分可重试与配置错误？
 
 ---
 
@@ -1519,20 +1445,20 @@ public class SnowflakeIdGenerator {
 import java.util.*;
 
 public class LRUCache<K, V> {
-    
+
     private final int capacity;
     private final Map<K, V> cache;
-    
+
     public LRUCache(int capacity) {
         this.capacity = capacity;
         this.cache = new HashMap<>();  // TODO: 改为 LinkedHashMap 实现 LRU
     }
-    
+
     public V get(K key) {
         // TODO: 获取并移动到尾部（最近使用）
         return null;
     }
-    
+
     public void put(K key, V value) {
         // TODO: 放入并处理容量超限
     }
@@ -1545,10 +1471,10 @@ public class LRUCache<K, V> {
 import java.util.*;
 
 public class LRUCache<K, V> {
-    
+
     private final int capacity;
     private final LinkedHashMap<K, V> cache;
-    
+
     public LRUCache(int capacity) {
         // LinkedHashMap 的 accessOrder=true 使其成为 LRU
         this.cache = new LinkedHashMap<K, V>(capacity, 0.75f, true) {
@@ -1559,30 +1485,30 @@ public class LRUCache<K, V> {
         };
         this.capacity = capacity;
     }
-    
+
     public V get(K key) {
         return cache.getOrDefault(key, null);
     }
-    
+
     public void put(K key, V value) {
         cache.put(key, value);
     }
-    
+
     public String toString() {
         return cache.keySet().toString();
     }
-    
+
     public static void main(String[] args) {
         LRUCache<String, Integer> cache = new LRUCache<>(3);
-        
+
         cache.put("A", 1);
         cache.put("B", 2);
         cache.put("C", 3);
         System.out.println("初始: " + cache);  // [A, B, C]
-        
+
         cache.get("A");  // 访问 A
         System.out.println("访问 A: " + cache);  // [B, C, A]（A 移到尾部）
-        
+
         cache.put("D", 4);  // 添加 D，触发删除最老的 B
         System.out.println("添加 D: " + cache);  // [C, A, D]
     }
@@ -1595,12 +1521,12 @@ public class LRUCache<K, V> {
 import java.util.*;
 
 public class LRUCache2<K, V> {
-    
+
     private final int capacity;
     private final Map<K, Node<K, V>> cache;
     private final Node<K, V> head;  // 虚拟头节点
     private final Node<K, V> tail;  // 虚拟尾节点
-    
+
     public LRUCache2(int capacity) {
         this.capacity = capacity;
         this.cache = new HashMap<>();
@@ -1609,14 +1535,14 @@ public class LRUCache2<K, V> {
         head.next = tail;
         tail.prev = head;
     }
-    
+
     public V get(K key) {
         Node<K, V> node = cache.get(key);
         if (node == null) return null;
         moveToTail(node);  // 移到尾部
         return node.value;
     }
-    
+
     public void put(K key, V value) {
         Node<K, V> node = cache.get(key);
         if (node != null) {
@@ -1626,43 +1552,43 @@ public class LRUCache2<K, V> {
             Node<K, V> newNode = new Node<>(key, value);
             cache.put(key, newNode);
             addToTail(newNode);
-            
+
             if (cache.size() > capacity) {
                 Node<K, V> removed = removeHead();
                 cache.remove(removed.key);
             }
         }
     }
-    
+
     private void moveToTail(Node<K, V> node) {
         removeNode(node);
         addToTail(node);
     }
-    
+
     private void addToTail(Node<K, V> node) {
         node.prev = tail.prev;
         node.next = tail;
         tail.prev.next = node;
         tail.prev = node;
     }
-    
+
     private Node<K, V> removeHead() {
         Node<K, V> oldHead = head.next;
         removeNode(oldHead);
         return oldHead;
     }
-    
+
     private void removeNode(Node<K, V> node) {
         node.prev.next = node.next;
         node.next.prev = node.prev;
     }
-    
+
     private static class Node<K, V> {
         K key;
         V value;
         Node<K, V> prev;
         Node<K, V> next;
-        
+
         Node() {}
         Node(K key, V value) {
             this.key = key;
@@ -1689,43 +1615,43 @@ public class LRUCache2<K, V> {
 import java.util.*;
 
 public class SkipList<K, V> {
-    
+
     private static final int MAX_LEVEL = 16;
-    
+
     // 跳表节点
     private static class Node<K, V> {
         K key;
         V value;
         Node<K, V>[] forwards;  // 每层的前向指针
-        
+
         Node(K key, V value, int level) {
             this.key = key;
             this.value = value;
             this.forwards = new Node[level];
         }
     }
-    
+
     private Node<K, V> head;
     private int level;
     private final Comparator<K> comparator;
-    
+
     public SkipList(Comparator<K> comparator) {
         this.comparator = comparator;
         this.head = new Node<>(null, null, MAX_LEVEL);
         this.level = 0;
     }
-    
+
     // 查找
     public V get(K key) {
         // TODO: 实现查找
         return null;
     }
-    
+
     // 插入
     public void put(K key, V value) {
         // TODO: 实现插入（随机层高）
     }
-    
+
     // 删除
     public void remove(K key) {
         // TODO: 实现删除
@@ -1740,38 +1666,37 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class SkipList<K, V> {
-    
+
     private static final int MAX_LEVEL = 16;
     private static final double PROBABILITY = 0.5;
-    
+
     private static class Node<K, V> {
         K key;
         V value;
         Node<K, V>[] forwards;
-        
+
         Node(K key, V value, int level) {
             this.key = key;
             this.value = value;
             this.forwards = new Node[level];
         }
     }
-    
+
     private final Node<K, V> head;
     private int level;
     private final Comparator<K> comparator;
     private final Random random;
-    
+
     public SkipList(Comparator<K> comparator) {
         this.comparator = comparator;
         this.head = new Node<>(null, null, MAX_LEVEL);
         this.level = 0;
         this.random = new Random();
     }
-    
+
     public void put(K key, V value) {
         Node<K, V>[] update = new Node[MAX_LEVEL];
-        int[] depths = new int[MAX_LEVEL];
-        
+
         Node<K, V> current = head;
         for (int i = level - 1; i >= 0; i--) {
             Node<K, V> next = current.forwards[i];
@@ -1780,26 +1705,37 @@ public class SkipList<K, V> {
                 next = current.forwards[i];
             }
             update[i] = current;
-            depths[i] = next != null ? depths[i] + 1 : 0;
         }
-        
+
+        Node<K, V> existing = current.forwards[0];
+        if (existing != null && compare(key, existing.key) == 0) {
+            existing.value = value;
+            return;
+        }
+
         // 随机层高
         int newLevel = randomLevel();
-        
+        if (newLevel > level) {
+            // 旧跳表没有这些层，新增层的前驱都是 head。
+            for (int i = level; i < newLevel; i++) {
+                update[i] = head;
+            }
+        }
+
         Node<K, V> newNode = new Node<>(key, value, newLevel);
         for (int i = 0; i < newLevel; i++) {
             newNode.forwards[i] = update[i].forwards[i];
             update[i].forwards[i] = newNode;
         }
-        
+
         if (newLevel > level) {
             level = newLevel;
         }
     }
-    
+
     public V get(K key) {
         Node<K, V> current = head;
-        
+
         for (int i = level - 1; i >= 0; i--) {
             Node<K, V> next = current.forwards[i];
             while (next != null && compare(key, next.key) > 0) {
@@ -1807,18 +1743,18 @@ public class SkipList<K, V> {
                 next = current.forwards[i];
             }
         }
-        
+
         current = current.forwards[0];
         if (current != null && compare(key, current.key) == 0) {
             return current.value;
         }
         return null;
     }
-    
+
     public void remove(K key) {
         Node<K, V>[] update = new Node[MAX_LEVEL];
         Node<K, V> current = head;
-        
+
         for (int i = level - 1; i >= 0; i--) {
             Node<K, V> next = current.forwards[i];
             while (next != null && compare(key, next.key) > 0) {
@@ -1827,20 +1763,20 @@ public class SkipList<K, V> {
             }
             update[i] = current;
         }
-        
+
         current = current.forwards[0];
         if (current != null && compare(key, current.key) == 0) {
             for (int i = 0; i < level; i++) {
                 if (update[i].forwards[i] != current) break;
                 update[i].forwards[i] = current.forwards[i];
             }
-            
+
             while (level > 0 && head.forwards[level - 1] == null) {
                 level--;
             }
         }
     }
-    
+
     private int randomLevel() {
         int level = 1;
         while (level < MAX_LEVEL && random.nextDouble() < PROBABILITY) {
@@ -1848,7 +1784,7 @@ public class SkipList<K, V> {
         }
         return level;
     }
-    
+
     @SuppressWarnings("unchecked")
     private int compare(K k1, K k2) {
         if (comparator != null) {
@@ -1856,7 +1792,7 @@ public class SkipList<K, V> {
         }
         return ((Comparable<K>) k1).compareTo(k2);
     }
-    
+
     public void print() {
         for (int i = level - 1; i >= 0; i--) {
             System.out.print("Level " + i + ": ");
@@ -1868,21 +1804,21 @@ public class SkipList<K, V> {
             System.out.println();
         }
     }
-    
+
     public static void main(String[] args) {
         SkipList<Integer, String> skipList = new SkipList<>(Comparator.naturalOrder());
-        
+
         skipList.put(3, "C");
         skipList.put(1, "A");
         skipList.put(5, "E");
         skipList.put(2, "B");
         skipList.put(4, "D");
-        
+
         skipList.print();
-        
+
         System.out.println("Get 3: " + skipList.get(3));
         System.out.println("Get 6: " + skipList.get(6));
-        
+
         skipList.remove(3);
         System.out.println("After removing 3:");
         skipList.print();

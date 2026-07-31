@@ -1,4 +1,10 @@
-# special
-/JavaGuide
-/resume
-/JD
+# Local runtime settings
+.claude/settings.local.json
+
+# OS metadata
+.DS_Store
+
+# Local interview inputs and source material
+/JavaGuide/
+/resume/
+/JD/
