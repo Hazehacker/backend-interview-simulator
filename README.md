@@ -2,85 +2,129 @@
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-一个支持 Java、C++、Go 以及主次语言混合模式的后端技术面试 Skill。
+使用自然语言与 AI 面试官互动，模拟真实中国大厂（字节、腾讯、阿里、美团、快手）后端技术面试。支持按求职者身份和面试官风格定制，全程记录状态并输出结构化评估报告。
 
-它通过一个统一入口组织面试配置、项目深挖、通用后端、语言专项、可选编码题和证据化评分。适用于日常实习、暑期实习、校招和 1-3 年社招候选人，不代表任何公司的真实面试或内部题库。
+---
 
 ## 核心特性
 
-- **统一入口**：同一个 `SKILL.md` 处理 Java、C++、Go 和通用后端面试，不需要安装多个语言版本。
-- **单语言与混合语言**：既可只面试一门语言，也可指定主语言和次语言；混合模式默认按 70% / 30% 分配语言专项，进入专项后冻结当前场次配置。
-- **公共能力与语言专项分离**：数据库、缓存、消息队列、网络、操作系统、分布式系统和系统设计使用公共知识库；语言语义、运行时、工具链和编码题使用对应语言知识库。
-- **简历和 JD 驱动**：根据候选人的真实项目证据和岗位要求调整问题，不臆测未提供的经历。
-- **一问一答与连续追问**：每轮只问一个问题，再根据回答沿原理、边界、取舍和验证继续追问。
-- **编码题跟随主语言**：编码环节默认使用主语言；只有用户明确要求时才切换到已配置的次语言。
-- **分维度评分**：分别评价项目、通用后端、主语言、次语言、系统设计/工程和思维表达；未考察内容不按零分处理。
-- **按需加载**：只在进入相应阶段时加载公共、语言专项、编码或 AI 辅助开发参考文件，避免把无关语言内容混入当前面试。
+**多身份模拟** — 针对不同阶段候选人设计差异化问题：日常实习、暑期实习、校招（应届）、社招 1-3 年。难度和追问深度随身份自动调整。
 
-## 安装
+**多语言支持** — 支持 Java、C++、Go 以及主次语言混合模式的后端技术面试 Skill。
 
-当前没有经过验证的在线入口。可执行的安装方式是：
+**六种面试官风格** — 从"严厉拷打"到"温和鼓励"，从"工程实践"到"深挖学术"，覆盖不同偏好。同一场面试，不同体验。
 
-> 将仓库目录放入目标 Agent 的 skills 目录，并确保目录名为 `backend-interview-simulator`。
+**高频技术题库** — 基于 JavaGuide/XiaolinCoding 整理，覆盖并发编程、JVM、MySQL、Redis、Spring、分布式系统等大厂常考方向。
 
-目录内应完整保留 `SKILL.md`、`references/`、`scripts/`、`README.md` 和 `LICENSE`，不要只复制单个 `SKILL.md`。
+**深度追问链** — 简历关键词（CAS、volatile、多级缓存、RAG 等几十个高频技术点）自动触发 3-5 层追问链，逼近底层原理与权衡，避免"听过名词"式过关。
 
-- **TRAE**：遵循当前版本 TRAE 的 skills 目录与加载规范。
-- **Codex**：遵循当前版本 Codex 的 skills 目录与加载规范。
-- **Claude**：遵循当前版本 Claude 的 skills 目录与加载规范。
-- **OpenClaw**：遵循当前版本 OpenClaw 的 skills 目录与加载规范。
+**完整评估反馈** — 面试结束后输出综合评分、各维度评分及风格化改进建议，新增"追问深度"评估维度，反馈措辞随面试官风格变化。
 
-上述说明表示本仓库按各工具常见的 skills 目录方式组织，不表示已在 TRAE、Codex、Claude 和 OpenClaw 上分别完成端到端验证。具体目录位置、重载方式和 Skill 支持状态可能随客户端版本变化，请以对应产品的当前文档为准。
+**简历与 JD 支持** — 提供简历和目标岗位 JD 可获得定制化问题，简历关键词自动预生成追问链，面试后输出 JD 匹配度分析。
 
-## 触发示例
+**AI 辅助开发考察** — 当候选人展示 AI 编程工具使用经验时，自动深入提问 Agent Loop、上下文管理、Spring Boot AI 辅助、RAG 量化验证等方向。
 
-安装并由 Agent 加载后，可以直接表达面试意图：
+**编码题** — 可选环节，面试末尾安排并发编程、设计模式、数据库等手写代码题，难度随身份调整。
 
-```text
-开始一场 Go 后端模拟面试
+**实时状态跟踪** — 面试全程维护结构化状态（已考察点、候选人弱点、待跟进项），避免重复提问，确保评估连贯。
+
+**纠错模式可选** — 面试开始前可选"严格模式"（真实面试压力，连续两次错误才纠正）或"即时引导模式"（答错立即纠正，边面边学）。
+
+---
+
+## 快速开始
+
+### 方式零：在线直接用（推荐）
+
+> 由 [socialistic.ai](https://socialistic.ai) 提供的在线入口，打开即传简历/岗位JD、开始模拟，无需配置环境。
+
+**[→  立即使用 后端面试模拟器](https://socialistic.ai/zh/skill/backend-interview-simulator-ed119e?utm_source=socialistic&utm_medium=share&utm_campaign=skill_share&utm_content=copy_link)**
+
+---
+
+### 选择你的运行环境
+
+本 skill 兼容 OpenClaw Skills 规范，可在多种平台运行。**推荐手机微信用户走 QClaw + 云端 OpenClaw 路线**，零配置即可开始。
+
+| 你的使用场景                | 推荐路径                  | 安装方式               |
+| --------------------------- | ------------------------- | ---------------------- |
+| 手机微信，想随时随地练      | **QClaw + 云端 OpenClaw** | 让 AI 帮你装（见下方） |
+| 企业微信 / 飞书 / 钉钉 / QQ | **WorkBuddy**             | 让 AI 帮你装           |
+| 飞书重度用户                | **AutoClaw**              | 让 AI 帮你装           |
+| 本地深度使用、想看源码      | **Claude Code（桌面端）** | 手动复制文件（见下方） |
+
+> **关于"复制 GitHub 目录"的疑问**：除了本地 Claude Code 需要手动复制，其他云端/远程平台都**不需要**你手动操作仓库目录，直接让 AI 安装即可。
+
+### 方式一：让 AI 帮你装（推荐）
+
+把下面这句话连同本仓库链接一起发给 AI（QClaw / WorkBuddy / AutoClaw / Claude Code 都支持）：
+
+```
+帮我安装这个 skill：https://github.com/Hazehacker/java-backend-interview-simulator
 ```
 
-```text
-我是应届生，主语言 Java、次语言 Go，面试 45 分钟
+AI 会自动拉取仓库、放到正确的 skills 目录、确认安装成功。然后你就可以直接说"开始模拟面试"触发。
+
+### 方式二：手动安装（仅本地 Claude Code）
+
+将仓库中 `SKILL.md` 和 `references/` 目录复制到 Claude Code 的 skills 目录：
+
+- Windows：`C:\Users\<你的用户名>\.claude\skills\java-backend-interview-simulator\`
+- macOS/Linux：`~/.claude/skills/java-backend-interview-simulator/`
+
+重启 Claude Code 后即可触发。
+
+### 触发面试
+
+安装完成后，在对话中直接表达面试意图即可：
+
+```
+开始一场模拟面试
+我是应届生，想模拟练习 Java 后端面试
+帮我准备字节后端实习面试
 ```
 
-```text
-按 C++ 社招岗位 JD 深挖我的项目
-```
+系统会依次确认：单语言或混合语言及具体语言、求职者身份、面试时长（30 / 40 / 45 / 60 分钟）、面试官风格、是否提供简历、是否包含编码题、纠错模式（严格/即时引导）等
 
-```text
-开始后端面试
-```
+### 语音输入（推荐）
 
-最后一个示例没有指定语言，Skill 会继续询问单语言或混合语言及具体语言，不会默认选择 Java。其他缺失配置也会逐项确认，包括候选人级别、时长、面试官风格、纠错模式、是否包含编码题，以及是否提供简历或 JD。
+文字输入面试问题太慢，**用语音模拟更接近真实面试节奏**：
 
-面试过程中可说“继续”“跳过”“结束”或“换个风格”。提前结束时，报告只使用已经获得的回答证据，并标出未考察范围。
+| 你在哪里聊天               | 语音方式                                 |
+| -------------------------- | ---------------------------------------- |
+| Windows 电脑（任何输入框） | **Win + H** 系统语音转文字               |
+| Mac（任何输入框）          | **Fn + Fn** 双击启动语音输入             |
+| 微信 / QQ                  | 长按已发送的语音消息 → "转文字" 后再发   |
+| 企业微信 / 飞书            | 直接发送语音消息（远程接入支持自动转写） |
 
-## 工作方式
+---
 
-默认阶段如下：
+## 进阶用法
 
-```text
-配置 -> 简历/JD -> 项目 -> 通用后端 -> 主语言
-     -> 次语言（仅混合模式）-> 编码（可选）-> 评分
-```
+### 控制命令
 
-公共知识库和语言知识库分开维护。单语言场次不会预加载另外两门语言；混合场次在首次进入主语言、次语言阶段时分别加载对应文件；编码题只加载实际编码语言的题库。
+面试过程中可使用以下命令：
+
+- **继续** — 进入下一环节
+- **跳过** — 跳过当前问题
+- **结束** — 提前结束并生成报告
+- **换个风格** — 实时切换面试官风格
+- **反馈** — 查看当前评分
+
+### 简历与 JD 支持
+
+提供简历和/或目标岗位 JD 可获得更有针对性的项目深挖问题和技术考察方向。面试结束后会输出 JD 匹配度分析报告。支持直接粘贴简历文本，也可提供 PDF / 图片 / Word 格式的简历文件路径，AI 会自动读取解析。
+
+---
 
 ## 项目结构
 
-```text
+```
 backend-interview-simulator/
 ├── .gitignore
 ├── LICENSE
 ├── README.md
 ├── SKILL.md
-├── docs/
-│   └── superpowers/
-│       ├── plans/
-│       │   └── 2026-07-30-backend-interview-simulator.md
-│       └── specs/
-│           └── 2026-07-30-backend-interview-simulator-design.md
 ├── references/
 │   ├── common-ai-dev-knowledge-base.md
 │   ├── common-backend-knowledge-base.md
@@ -95,70 +139,66 @@ backend-interview-simulator/
 │   ├── java-ai-dev-tools-knowledge-base.md
 │   ├── java-coding-challenges.md
 │   └── java-tech-knowledge-base.md
-└── scripts/
+├── scripts/
+│   └── validate_skill.py
+└── tests/
     ├── test_java_knowledge_boundaries.py
     ├── test_java_thread_pool.py
     ├── test_jd_coverage.py
-    ├── test_validate_skill.py
-    └── validate_skill.py
+    └── test_validate_skill.py
 ```
 
-`SKILL.md` 定义触发条件、会话状态、语言路由和面试流程；`references/` 保存按阶段加载的公共与语言参考；`scripts/validate_skill.py` 执行仓库静态结构校验，`scripts/test_*.py` 保存 validator mutation、Java 线程池、Java 版本边界和 JD coverage 聚焦测试。`docs/` 保留公开的设计与实施计划，便于审阅演进过程，不参与 Skill 运行。`.superpowers/` 是本地任务 scratch，不属于公开项目结构。
+---
 
-## 来源与内容边界
+## 技术架构
 
-- 本项目从 [Hazehacker/java-backend-interview-simulator](https://github.com/Hazehacker/java-backend-interview-simulator) 的 Java 版本演进而来。
-- [XNefertar/backend-interview-simulator](https://github.com/XNefertar/backend-interview-simulator) 仅用于校准 C++ / Go 面试主题覆盖，不复用其题库骨架。
-- [2637309949/go-interview](https://github.com/2637309949/go-interview) 与[小林 coding](https://xiaolincoding.com/) 仅用于校准 Go、计算机基础和通用后端主题覆盖。
-- [JavaGuide](https://github.com/Snailclimb/JavaGuide) 用于校准 Java 与通用后端高频主题覆盖。
-- **外部来源若未确认与本项目兼容的内容许可证，只能作为主题覆盖索引；不得复制或改写其正文、代码、图片、答案结构或题库骨架。C++、Go 和新增公共内容均独立编写。**
+本项目基于 **OpenClaw Skill 框架**构建，采用三层加载架构：
 
-详细的访问日期、观察到的许可状态、允许用途和受影响文件见[设计文档](docs/superpowers/specs/2026-07-30-backend-interview-simulator-design.md#111-来源用途)。这些链接用于说明主题来源和覆盖校准，不表示外部项目为本仓库背书。外部项目及网站内容仍受各自许可证和使用条款约束，不因本仓库的 MIT License 而改变。语言、标准库、编译器、运行时和框架行为可能随版本变化，面试材料中的技术事实仍需结合目标版本、官方文档和实际实现复核。
+| 层级         | 文件                   | 作用                                   |
+| ------------ | ---------------------- | -------------------------------------- |
+| **元数据**   | `SKILL.md` frontmatter | 触发条件与能力概述，始终加载           |
+| **主体逻辑** | `SKILL.md` body        | 面试流程、风格适配、状态跟踪规则       |
+| **知识库**   | `references/*.md`      | 按需加载：技术题库、评分标准、风格指南 |
 
-## 隐私与敏感数据
+面试流程采用**有限状态机**思路：破冰 → 项目深挖 → 技术考察 → AI 能力（可选）→ 编码题（可选）→ 总结反馈，各阶段时长和深度由身份和剩余时间共同决定。
 
-- 上传简历或 JD 前，删除姓名、电话、邮箱、证件号等面试不需要的个人身份信息（PII）。
-- 禁止向 Skill 或宿主 Agent 提供密码、API Key、Access Token、Refresh Token、Cookie、私钥、生产日志中的敏感值、公司保密内容或真实客户数据。
-- 宿主 Agent、模型服务及其插件可能处理、传输或留存输入数据，具体边界由对应服务的隐私条款、部署方式和组织策略决定；本仓库无法替代这些服务作出隐私保证。
-- 不要把真实简历或 JD 提交到本仓库。本地示例、测试和问题复现只能使用脱敏数据或模拟数据。
-- `.gitignore` 只能降低本地文件被误提交的概率，不是访问控制、加密、数据擦除或隐私保证；敏感数据不应进入仓库工作区。
+---
 
-## 当前局限与验证边界
+## 当前局限
 
-- 这是由 Markdown 指令和参考资料组成的 Skill，不是具有确定性执行结果的独立面试服务；实际提问和评分质量受宿主 Agent、模型和上下文影响。
-- 当前只完成仓库静态校验和 Skill 元数据校验，未宣称在 TRAE、Codex、Claude、OpenClaw 上全部完成端到端对话验证。
-- 时长用于裁剪面试阶段和题量，不是精确计时器；当前也不直接评价实时语音、语速、停顿或口语表现。
-- PDF、图片或 Word 简历能否读取取决于宿主 Agent 提供的文件读取能力；无法读取时应改为粘贴文本。
-- 题库用于面试覆盖和追问，不保证穷尽所有岗位、框架、语言版本或生产环境差异，也不能替代官方文档、编译运行和线上证据。
-- 自动校验检查目录、元数据、路由和部分内容约束，不证明每个技术结论都适用于所有版本，也不证明模型会完全一致地遵循流程。
+- **面试时长依赖估算**：实际面试中时间分配是动态的，本项目按参考时长设计，但不做精确计时
+- **不支持实时语音**：当前为文字交互，暂不涉及口语表达评估（表达能力通过文字间接评估）
 
-## 本地校验
+---
 
-在仓库根目录执行：
+## 贡献指南
 
-```bash
-python3 -m unittest discover -s scripts -p 'test_*.py'
-python3 scripts/validate_skill.py
-```
+欢迎提交补充，以下是几个优先方向：
 
-测试覆盖：
+- **题库扩充** — 补充更多高频面试题及参考答案（参考 `references/tech-knowledge-base.md` 格式）
+- **风格优化** — 改进现有面试官风格的话术或追问逻辑
+- **场景扩充** — 添加更多场景设计题（如秒杀系统、分布式 ID、即时通讯等）
+- **文档改进** — 修正错误、提升可读性
 
-- 11 项 validator baseline/mutation，包括额外、缺失、嵌套 reference，递归来源扫描、语言预加载、延迟加载、路由和 H2 边界；
-- 从 Markdown 抽取并动态编译运行 Java `SimpleThreadPool`，验证 graceful shutdown、构造失败回滚和 fatal `Error` 策略；
-- Java 规范、JDK 标准库、JVM/GC 实现和版本变化边界；
-- JD coverage、must-have 和整体星级门禁。
+参与流程：
 
-Java thread-pool 动态测试会自动发现 `JAVA_HOME`、`PATH`、常见 JDK 和 IDE JBR。找不到可用 JDK 时，该动态测试会显示 `skipped`；这表示 Java 编译运行未验证，不能视为动态测试通过。其他标准库测试仍会继续执行。
+1. Fork 本仓库
+2. 创建分支 (`git checkout -b feature/your-feature`)
+3. 提交改动 (`git commit -m 'Add: 简短描述'`)
+4. 推送分支 (`git push origin feature/your-feature`)
+5. 提交 Pull Request
 
-`SimpleThreadPool` 是用于讲解生命周期、启动回滚和 fatal failure 的教学实现，不替代 `ThreadPoolExecutor`。任一 `ThreadFactory.newThread` 或 `Thread.start` 失败时，构造器会 interrupt/join 已启动 worker 后原样抛出；任务 `RuntimeException` 被隔离，任务 `Error` 不被吞掉，并触发全池 `SHUTDOWN`，由剩余 worker 排空已接收任务。
-
-全部测试和 validator 通过时，输出包含：
-
-```text
-OK
-validation passed
-```
+---
 
 ## 许可证
 
-本仓库中有权许可的原创及演进内容按 [MIT License](LICENSE) 发布。外部链接指向的项目、文章、图片和其他材料不属于本仓库授权范围，使用时应分别遵循其原始许可证与条款。
+本项目基于 [MIT License](LICENSE) 开源。
+
+技术知识库部分引用了 [JavaGuide](https://github.com/Snailclimb/JavaGuide) 的高频面试题整理，仅作为面试考察点使用，不改变其原有许可。
+
+---
+
+## 致谢
+
+- [JavaGuide](https://github.com/Snailclimb/JavaGuide) / [xiaolincoding](https://xiaolincoding.com/)— 高频面试题来源
+
