@@ -4,6 +4,9 @@
 # OS metadata
 .DS_Store
 
+# Local design and execution notes
+/docs/superpowers/
+
 # Local interview inputs and source material
 /JavaGuide/
 /resume/
